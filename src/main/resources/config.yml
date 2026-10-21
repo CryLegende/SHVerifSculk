@@ -1,0 +1,6 @@
+# Message de vérification envoyé au joueur.
+# Supporte les codes couleurs standards (&) et hexadécimaux (&#RRGGBB).
+verification-message: "&c&lATTENTION ! &eVous êtes sur le point de casser un catalyseur de sculk sans Silk Touch. Récasser le bloc pour confirmer."
+
+# Temps en secondes pendant lequel le joueur doit re-casser le bloc pour confirmer.
+confirmation-delay: 10
