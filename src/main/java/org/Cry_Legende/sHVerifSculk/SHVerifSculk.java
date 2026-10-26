@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
@@ -23,15 +24,27 @@ public final class SHVerifSculk extends JavaPlugin implements Listener {
     // Pattern pour la gestion des couleurs hexadécimales
     private static final Pattern HEX_PATTERN = Pattern.compile("&#([A-Fa-f0-9]{6})");
 
+    // Valeurs lues une fois au démarrage (et non à chaque cassage)
+    private long confirmationDelay; // en millisecondes
+    private String verificationMessage;
+
     @Override
     public void onEnable() {
         // Sauvegarde la configuration par défaut si elle n'existe pas
         saveDefaultConfig();
+        confirmationDelay = getConfig().getLong("confirmation-delay", 10) * 1000;
+        verificationMessage = getConfig().getString("verification-message");
 
         // Enregistre cette classe comme un écouteur d'événements
         getServer().getPluginManager().registerEvents(this, this);
 
         getLogger().info("SHVerifSculk a été activé !");
+    }
+
+    // Vide la confirmation en attente : sans ça la map garde une entrée par joueur pour toujours
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        confirmationMap.remove(event.getPlayer().getUniqueId());
     }
 
     @Override
@@ -60,8 +73,6 @@ public final class SHVerifSculk extends JavaPlugin implements Listener {
         }
 
         long currentTime = System.currentTimeMillis();
-        // On récupère le délai depuis la config (en millisecondes)
-        long confirmationDelay = getConfig().getLong("confirmation-delay", 10) * 1000;
 
         // Si le joueur n'est pas dans la map ou que le délai est dépassé
         if (!confirmationMap.containsKey(playerUUID) || (currentTime - confirmationMap.get(playerUUID)) > confirmationDelay) {
@@ -70,9 +81,8 @@ public final class SHVerifSculk extends JavaPlugin implements Listener {
             // On ajoute le joueur à la map pour la prochaine vérification
             confirmationMap.put(playerUUID, currentTime);
 
-            String message = getConfig().getString("verification-message");
-            if (message != null && !message.isEmpty()) {
-                player.sendMessage(translateColorCodes(message));
+            if (verificationMessage != null && !verificationMessage.isEmpty()) {
+                player.sendMessage(translateColorCodes(verificationMessage));
             }
         } else {
             // Le joueur a confirmé en cassant le bloc à nouveau dans le temps imparti
